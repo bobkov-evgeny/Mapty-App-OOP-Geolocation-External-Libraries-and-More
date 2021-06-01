@@ -108,10 +108,12 @@ class App {
       if (curWorkout.type === 'running') {
          const cadence = document.getElementById(`${curWorkoutId + 3}`);
          curWorkout.cadence = +cadence.value;
+         curWorkout.pace = duration.value / distance.value;
       }
       if (curWorkout.type === 'cycling') {
          const elevationGain = document.getElementById(`${curWorkoutId + 4}`);
          curWorkout.elevationGain = +elevationGain.value;
+         curWorkout.speed = distance.value / (duration.value / 60);
       }
 
       curWorkout.distance = +distance.value;

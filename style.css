@@ -90,6 +90,7 @@ a:visited {
 .workout__details {
    display: flex;
    align-items: baseline;
+   margin: 0 10px;
 }
 
 .workout__icon {
@@ -265,15 +266,14 @@ a:visited {
 
 .workout__details--wrapper {
    display: flex;
-   justify-content: space-between;
    margin-top: 10px;
 }
 
 .detail--input {
    margin-right: 3px;
-   margin-left: 3px;
+   margin-left: 0px;
    height: 25px;
-   width: 40px;
+   width: 50px;
    background-color: #aaa;
    border-style: solid;
    border-width: 1px;
