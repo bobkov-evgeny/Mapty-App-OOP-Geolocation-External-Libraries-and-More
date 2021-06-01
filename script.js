@@ -91,7 +91,6 @@ class App {
          'click',
          this._deleteWorkout.bind(this)
       );
-      containerWorkouts.addEventListener('click', this._editWorkout.bind(this));
 
       // Implementing edit function
       //prettier-ignore
@@ -103,7 +102,6 @@ class App {
    _editWork(e) {
       const curWorkoutId = e.target.closest('.workout').id;
       const curWorkout = this.#workouts.find(x => x.id === curWorkoutId);
-      console.log(curWorkout);
       const duration = document.getElementById(`${curWorkoutId + 2}`);
       const distance = document.getElementById(`${curWorkoutId + 1}`);
 
@@ -359,7 +357,7 @@ class App {
       if (e.target.className !== 'btn-delete') return;
 
       const selectedWorkout = this.#workouts.find(
-         workout => workout.id === e.target.closest('.workout').dataset.id
+         workout => workout.id === e.target.closest('.workout').id
       );
       const index = this.#workouts.indexOf(selectedWorkout);
       this.#workouts.splice(index, 1);
@@ -367,16 +365,6 @@ class App {
 
       this._setLocalStorage();
       location.reload();
-   }
-
-   _editWorkout(e) {
-      if (e.target.className !== 'btn-edit') return;
-      const selectedWorkout = this.#workouts.find(
-         workout => workout.id === e.target.closest('.workout').dataset.id
-      );
-
-      //this._hideForm();
-      //console.log(selectedWorkout);
    }
 }
 
