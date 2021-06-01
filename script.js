@@ -1,6 +1,8 @@
 'use strict';
 
 const form = document.querySelector('.form');
+let inputs = [];
+let btnEdit = [];
 const containerWorkouts = document.querySelector('.workouts');
 const inputType = document.querySelector('.form__input--type');
 const inputDistance = document.querySelector('.form__input--distance');
@@ -75,13 +77,49 @@ class App {
    #workouts = [];
 
    constructor() {
+      // get user position
       this._getPosition();
 
+      // get data from local storage
+      this._getLocalStorage();
+
+      // Attach event handlers
       form.addEventListener('submit', this._newWorkout.bind(this));
-
       inputType.addEventListener('change', this._toggleElevationField);
-
       containerWorkouts.addEventListener('click', this._moveToPopup.bind(this));
+      containerWorkouts.addEventListener(
+         'click',
+         this._deleteWorkout.bind(this)
+      );
+      containerWorkouts.addEventListener('click', this._editWorkout.bind(this));
+
+      // Implementing edit function
+      //prettier-ignore
+      setTimeout(() => {btnEdit = document.querySelectorAll('.btn-edit');}, 1000);
+      //prettier-ignore
+      setTimeout(() => btnEdit.forEach(btn => btn.addEventListener('click', this._editWork.bind(this))),1000);
+   }
+
+   _editWork(e) {
+      const curWorkoutId = e.target.closest('.workout').id;
+      const curWorkout = this.#workouts.find(x => x.id === curWorkoutId);
+      console.log(curWorkout);
+      const duration = document.getElementById(`${curWorkoutId + 2}`);
+      const distance = document.getElementById(`${curWorkoutId + 1}`);
+
+      if (curWorkout.type === 'running') {
+         const cadence = document.getElementById(`${curWorkoutId + 3}`);
+         curWorkout.cadence = +cadence.value;
+      }
+      if (curWorkout.type === 'cycling') {
+         const elevationGain = document.getElementById(`${curWorkoutId + 4}`);
+         curWorkout.elevationGain = +elevationGain.value;
+      }
+
+      curWorkout.distance = +distance.value;
+      curWorkout.duration = +duration.value;
+      localStorage.setItem('workouts', JSON.stringify(this.#workouts));
+      location.reload();
    }
 
    _getPosition() {
@@ -108,6 +146,11 @@ class App {
 
       // Click on map
       this.#map.on('click', this._showForm.bind(this));
+
+      // render markers
+      this.#workouts.forEach(work => {
+         this._renderWorkoutMarker(work);
+      });
    }
 
    _showForm(mapE) {
@@ -191,6 +234,7 @@ class App {
       this._hideForm();
 
       // Set local storage to all workouts
+      this._setLocalStorage();
    }
 
    _renderWorkoutMarker(workout) {
@@ -213,29 +257,45 @@ class App {
 
    _renderWorkout(workout) {
       let html = `
-		<li class="workout workout--${workout.type}" data-id="${workout.id}">
-			<h2 class="workout__title">${workout.description}</h2>
-			<div class="workout__details">
-				<span class="workout__icon">${workout.type === 'running' ? `🏃‍♂️` : `🚴‍♀️`}</span>
-				<span class="workout__value">${workout.distance}</span>
-				<span class="workout__unit">km</span>
-			</div>
-			<div class="workout__details">
-				<span class="workout__icon">⏱</span>
-				<span class="workout__value">${workout.duration}</span>
-				<span class="workout__unit">min</span>
-			</div>`;
-      if (workout.type === 'running') {
-         html += `
+		<li class="workout workout--${workout.type}" id="${workout.id}">
+			<div class="workout__title-container">
+            <h2 class="workout__title">${workout.description}</h2>
+            <div class="btn--wrapper">
+               <button class="btn-edit">Save new data</button>
+               <button class="btn-delete">Delete</button>
+            </div>
+         </div>
+			<div class="workout__details--wrapper">
 				<div class="workout__details">
-					<span class="workout__icon">⚡️</span>
-					<span class="workout__value">${workout.pace.toFixed(1)}</span>
-					<span class="workout__unit">min/km</span>
+					<span class="workout__icon">${workout.type === 'running' ? `🏃‍♂️` : `🚴‍♀️`}</span>
+					<input class="detail--input distance--input" id="${workout.id + 1}" value="${
+         workout.distance
+      }"</input>
+					<span class="workout__unit">km</span>
 				</div>
 				<div class="workout__details">
-					<span class="workout__icon">🦶🏼</span>
-					<span class="workout__value">${workout.cadence}</span>
-					<span class="workout__unit">spm</span>
+					<span class="workout__icon">⏱</span>
+					<input class="detail--input duration--input" id="${workout.id + 2}" value="${
+         workout.duration
+      }"</input>
+					<span class="workout__unit">min</span>
+				</div>`;
+      if (workout.type === 'running') {
+         html += `
+					<div class="workout__details">
+						<span class="workout__icon">⚡️</span>
+						<input readonly class="detail--input disabled-input" value="${workout.pace.toFixed(
+                     1
+                  )}"</input>
+						<span class="workout__unit">min/km</span>
+					</div>
+					<div class="workout__details">
+						<span class="workout__icon">🦶🏼</span>
+						<input class="detail--input cadence--input" id="${workout.id + 3}" value="${
+            workout.cadence
+         }"</input>
+						<span class="workout__unit">spm</span>
+					</div>
 				</div>
          </li>`;
       }
@@ -244,12 +304,16 @@ class App {
          html += `
 				<div class="workout__details">
 					<span class="workout__icon">⚡️</span>
-					<span class="workout__value">${workout.speed.toFixed(1)}</span>
+					<input readonly class="detail--input disabled-input" value="${workout.speed.toFixed(
+                  1
+               )}"</input>
 					<span class="workout__unit">km/h</span>
 				</div>
 				<div class="workout__details">
 					<span class="workout__icon">⛰</span>
-					<span class="workout__value">${workout.elevationGain}</span>
+					<input class="detail--input elevationGain--input" id="${
+                  workout.id + 4
+               }" value="${workout.elevationGain}"</input>
 					<span class="workout__unit">m</span>
 				</div>
          </li>
@@ -263,19 +327,59 @@ class App {
       const workoutEl = e.target.closest('.workout');
 
       if (!workoutEl) return;
-      const workout = this.#workouts.find(
-         work => work.id === workoutEl.dataset.id
-      );
+      const workout = this.#workouts.find(work => work.id === workoutEl.id);
 
       this.#map.setView(workout.coords, this.#mapZoomLevel, {
          animate: true,
          pan: { duration: 1 },
       });
 
-      workout.click();
-      console.log(workout);
+      //workout.click();
+   }
+
+   _setLocalStorage() {
+      localStorage.setItem('workouts', JSON.stringify(this.#workouts));
+   }
+
+   _getLocalStorage() {
+      const data = JSON.parse(localStorage.getItem('workouts'));
+
+      if (!data) return;
+
+      this.#workouts = data;
+      this.#workouts.forEach(work => this._renderWorkout(work));
+   }
+
+   reset() {
+      localStorage.removeItem('workouts');
+      location.reload();
+   }
+
+   _deleteWorkout(e) {
+      if (e.target.className !== 'btn-delete') return;
+
+      const selectedWorkout = this.#workouts.find(
+         workout => workout.id === e.target.closest('.workout').dataset.id
+      );
+      const index = this.#workouts.indexOf(selectedWorkout);
+      this.#workouts.splice(index, 1);
+      console.log(this.#workouts);
+
+      this._setLocalStorage();
+      location.reload();
+   }
+
+   _editWorkout(e) {
+      if (e.target.className !== 'btn-edit') return;
+      const selectedWorkout = this.#workouts.find(
+         workout => workout.id === e.target.closest('.workout').dataset.id
+      );
+
+      //this._hideForm();
+      //console.log(selectedWorkout);
    }
 }
 
 ///////////////////////////////////////////////////
+
 const app = new App();
